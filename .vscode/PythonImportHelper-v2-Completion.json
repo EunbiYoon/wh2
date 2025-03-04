@@ -1,0 +1,107 @@
+[
+    {
+        "label": "load_training_set",
+        "importPath": "utils",
+        "description": "utils",
+        "isExtraImport": true,
+        "detail": "utils",
+        "documentation": {}
+    },
+    {
+        "label": "load_test_set",
+        "importPath": "utils",
+        "description": "utils",
+        "isExtraImport": true,
+        "detail": "utils",
+        "documentation": {}
+    },
+    {
+        "label": "re",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "re",
+        "description": "re",
+        "detail": "re",
+        "documentation": {}
+    },
+    {
+        "label": "random",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "random",
+        "description": "random",
+        "detail": "random",
+        "documentation": {}
+    },
+    {
+        "label": "pandas",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "pandas",
+        "description": "pandas",
+        "detail": "pandas",
+        "documentation": {}
+    },
+    {
+        "label": "stopwords",
+        "importPath": "nltk.corpus",
+        "description": "nltk.corpus",
+        "isExtraImport": true,
+        "detail": "nltk.corpus",
+        "documentation": {}
+    },
+    {
+        "label": "nltk",
+        "kind": 6,
+        "isExtraImport": true,
+        "importPath": "nltk",
+        "description": "nltk",
+        "detail": "nltk",
+        "documentation": {}
+    },
+    {
+        "label": "preprocess_text",
+        "kind": 2,
+        "importPath": "utils",
+        "description": "utils",
+        "peekOfCode": "def preprocess_text(text):\n    stop_words = set(stopwords.words('english'))\n    text = REPLACE_NO_SPACE.sub(\"\", text)\n    text = REPLACE_WITH_SPACE.sub(\" \", text)\n    text = re.sub(r'\\d+', '', text)\n    text = text.lower()\n    words = text.split()\n    return [w for w in words if w not in stop_words]\ndef load_training_set(percentage_positives, percentage_negatives):\n    vocab = set()",
+        "detail": "utils",
+        "documentation": {}
+    },
+    {
+        "label": "load_training_set",
+        "kind": 2,
+        "importPath": "utils",
+        "description": "utils",
+        "peekOfCode": "def load_training_set(percentage_positives, percentage_negatives):\n    vocab = set()\n    positive_instances = []\n    negative_instances = []\n    df = pd.read_csv('train-positive.csv')\n    for _, contents in df.iterrows():\n        contents = contents['reviewText']\n        if random.random() > percentage_positives:\n            continue\n        contents = preprocess_text(contents)",
+        "detail": "utils",
+        "documentation": {}
+    },
+    {
+        "label": "load_test_set",
+        "kind": 2,
+        "importPath": "utils",
+        "description": "utils",
+        "peekOfCode": "def load_test_set(percentage_positives, percentage_negatives):\n    positive_instances = []\n    negative_instances = []\n    df = pd.read_csv('test-positive.csv')\n    for _, contents in df.iterrows():\n        contents = contents['reviewText']\n        if random.random() > percentage_positives:\n            continue\n        contents = preprocess_text(contents)\n        positive_instances.append(contents)",
+        "detail": "utils",
+        "documentation": {}
+    },
+    {
+        "label": "REPLACE_NO_SPACE",
+        "kind": 5,
+        "importPath": "utils",
+        "description": "utils",
+        "peekOfCode": "REPLACE_NO_SPACE = re.compile(\"[._;:!*`¦\\'?,\\\"()\\[\\]]\")\nREPLACE_WITH_SPACE = re.compile(\"(<br\\s*/><br\\s*/>)|(\\-)|(\\/)\")\nnltk.download('stopwords')\ndef preprocess_text(text):\n    stop_words = set(stopwords.words('english'))\n    text = REPLACE_NO_SPACE.sub(\"\", text)\n    text = REPLACE_WITH_SPACE.sub(\" \", text)\n    text = re.sub(r'\\d+', '', text)\n    text = text.lower()\n    words = text.split()",
+        "detail": "utils",
+        "documentation": {}
+    },
+    {
+        "label": "REPLACE_WITH_SPACE",
+        "kind": 5,
+        "importPath": "utils",
+        "description": "utils",
+        "peekOfCode": "REPLACE_WITH_SPACE = re.compile(\"(<br\\s*/><br\\s*/>)|(\\-)|(\\/)\")\nnltk.download('stopwords')\ndef preprocess_text(text):\n    stop_words = set(stopwords.words('english'))\n    text = REPLACE_NO_SPACE.sub(\"\", text)\n    text = REPLACE_WITH_SPACE.sub(\" \", text)\n    text = re.sub(r'\\d+', '', text)\n    text = text.lower()\n    words = text.split()\n    return [w for w in words if w not in stop_words]",
+        "detail": "utils",
+        "documentation": {}
+    }
+]
