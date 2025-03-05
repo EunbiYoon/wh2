@@ -1,12 +1,16 @@
 import re
 import random
 import pandas as pd
-from nltk.corpus import stopwords
 import nltk
+
+## add this part for mac -> remove for window
+nltk.data.path.append('/Users/ptk-a240386-mb/nltk_data')
+from nltk.corpus import stopwords
 
 REPLACE_NO_SPACE = re.compile("[._;:!*`¦\'?,\"()\[\]]")
 REPLACE_WITH_SPACE = re.compile("(<br\s*/><br\s*/>)|(\-)|(\/)")
-nltk.download('stopwords')
+## remove this part for mac -> add for window
+#nltk.download('stopwords')
 
 
 def preprocess_text(text):

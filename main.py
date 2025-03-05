@@ -1,6 +1,9 @@
 from utils import load_training_set, load_test_set
 
 
+# unique vocabulary vector
+def vocabulary_vector(pos_train )
+
 if __name__ == '__main__':
     percentage_positive_instances_train = 0.2
     percentage_negative_instances_train = 0.2
