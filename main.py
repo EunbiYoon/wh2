@@ -2,7 +2,10 @@ from utils import load_training_set, load_test_set
 
 
 # unique vocabulary vector
-def vocabulary_vector(pos_train )
+def vocabulary_vector(data_list):
+    return 3
+
+# make confusion matrix
 
 if __name__ == '__main__':
     percentage_positive_instances_train = 0.2
@@ -18,3 +21,5 @@ if __name__ == '__main__':
     print("Number of positive training instances:", len(pos_train))
     print("Number of positive test instances:", len(pos_test))
     print("Number of negative test instances:", len(neg_test))
+
+    print(pos_train)
