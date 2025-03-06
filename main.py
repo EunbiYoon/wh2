@@ -17,9 +17,13 @@ def prior_probability(pos_data_len, neg_data_len, train_info):
     return pr_yi
         
 # bag-of-words vector m
-def bag_of_words(V_vector , data_list):
+def bag_of_words(V_vector, data_list):
     M_Vector=pd.DataFrame(columns=V_vector,index=range(len(data_list)))
-    print(M_Vector)
+    for i in range(len(data_list)):
+       # DataFrame에서 행을 가져오려면 iloc 사용
+        result = [[sublist.count(target) for target in sublist] for sublist in M_Vector.iloc[i]]
+        print(result)
+
 
 # Posterior Probability :: pr(yi|Doc) = n(wk, yi)/sigma (n(ws,yi))
 def posterior_probability():
@@ -71,6 +75,9 @@ if __name__ == '__main__':
 
     ### calculate Vocabulary Vector : unique words from training
     V_vector = list(set(chain.from_iterable(combined_train)))
+    # 데이터 저장
+    with open('V_vector.txt','w',encoding='utf-8') as file:
+        file.writelines(f"{item}\n" for item in V_vector)
 
     ### calculate posterior probability
     aa=bag_of_words(V_vector,combined_train)
