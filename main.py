@@ -77,12 +77,17 @@ def condition_prob(vocab, pos_train, neg_train, test_data):
     test_index=find_matching_indices(vocab, test_unique)
 
     # get the portion from condition_table
-    test_condition_portion=condition_table.iloc[test_index]
+    test_condition_table=condition_table.iloc[test_index]
 
     # multiply pos_portion and neg_portion
-    test_condition_multiply = test_condition_portion.prod()
+    multiply_row=test_condition_table.prod()
+    test_condition_table.loc['Multiply']=multiply_row
 
-    return test_condition_multiply["pos_portion"], test_condition_multiply["neg_portion"]
+
+    ####### check result
+    print(test_condition_table)
+
+    return multiply_row["pos_portion"], multiply_row["neg_portion"]
 
 
 
@@ -123,7 +128,7 @@ if __name__ == '__main__':
     q1_test_pos=multinomial_standard(prior_pos_train, prior_neg_train, condition_pos_test, condition_neg_test) # posterior probability
     print(f"=> Test Positive Dataset Predicted to '{q1_test_pos}' class\n")
     # test negative dataset
-    condition_pos_test, condition_neg_test=condition_prob(list(vocab), pos_train, neg_train, pos_test) # conditional probability 
+    condition_pos_test, condition_neg_test=condition_prob(list(vocab), pos_train, neg_train, neg_test) # conditional probability 
     q1_test_neg=multinomial_standard(prior_pos_train, prior_neg_train, condition_pos_test, condition_neg_test) # posterior probability
     print(f"=> Test Negative Dataset Predicted to '{q1_test_pos}' class\n")
      
