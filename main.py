@@ -181,7 +181,7 @@ if __name__ == '__main__':
     q1_test_pos=multinomial_standard(prior_pos_train, prior_neg_train, q1_condition_table, list(vocab), pos_test) # posterior probability
     q1_test_neg=multinomial_standard(prior_pos_train, prior_neg_train, q1_condition_table, list(vocab), neg_test) # posterior probability
     # message
-    print(f"=> Test Positive Dataset Predicted to '{q1_test_pos}' class\n")
+    print(f"=> Test Positive Dataset Predicted to '{q1_test_pos}' class")
     print(f"=> Test Negative Dataset Predicted to '{q1_test_pos}' class\n")
     
     ### Question 2 : Laplace Smoothing alpha = 0.0001 ~ 1000
@@ -192,6 +192,6 @@ if __name__ == '__main__':
     q2_test_pos=laplace_smoothing(prior_pos_train, prior_neg_train, q2_condition_table, list(vocab), pos_test, 1) # posterior probability
     q2_test_neg=laplace_smoothing(prior_pos_train, prior_neg_train, q2_condition_table, list(vocab), neg_test, 1) # posterior probability
     # message
-    print(f"=> Test Positive Dataset Predicted to '{q2_test_pos}' class\n")
+    print(f"=> Test Positive Dataset Predicted to '{q2_test_pos}' class")
     print(f"=> Test Negative Dataset Predicted to '{q2_test_neg}' class\n")
     
