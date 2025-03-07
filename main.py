@@ -98,9 +98,9 @@ def multinomial_standard(prior_pos, prior_neg, condition_pos, condition_neg):
         return posterior_result
     elif posterior_pos==posterior_neg:
         if posterior_pos==0:
-            print("Error :: Multiply 0 made 0")
+            print("-> Error :: Multiply 0 made 0")
         else:
-            print("Error :: Positive and Negative Have Same Posterior Probability ")
+            print("-> Error :: Positive and Negative Have Same Posterior Probability")
 
                                                                                                                             
 # main function
@@ -112,18 +112,18 @@ if __name__ == '__main__':
     percentage_negative_instances_test = 0.02
     (pos_train, neg_train, vocab) = load_training_set(percentage_positive_instances_train, percentage_negative_instances_train)
     (pos_test, neg_test) = load_test_set(percentage_positive_instances_test, percentage_negative_instances_test)
-    print("Train and Test dataset are completed to preprocessing data")
+    print("\nTrain and Test dataset are completed to preprocessing data\n")
 
 
     ### Question 1 : standard Multinominal Naive Bayes
-    print("===== Question 1 : Standard Multinomial Naive Bayes with both 20 % Train and Test Dataset ====")
+    print("[Question 1] Standard Multinomial Naive Bayes with both 20 % Train and Test Dataset\n")
     prior_pos_train,prior_neg_train=prior_prob(len(pos_train), len(neg_train)) # prior probability
     # test positive dataset
     condition_pos_test, condition_neg_test=condition_prob(list(vocab), pos_train, neg_train, pos_test) # conditional probability 
     q1_test_pos=multinomial_standard(prior_pos_train, prior_neg_train, condition_pos_test, condition_neg_test) # posterior probability
-    print(f"=====> Test Positive Dataset Predicted to '{q1_test_pos}' class")
+    print(f"=> Test Positive Dataset Predicted to '{q1_test_pos}' class\n")
     # test negative dataset
     condition_pos_test, condition_neg_test=condition_prob(list(vocab), pos_train, neg_train, pos_test) # conditional probability 
     q1_test_neg=multinomial_standard(prior_pos_train, prior_neg_train, condition_pos_test, condition_neg_test) # posterior probability
-    print(f"=====> Test Negative Dataset Predicted to '{q1_test_pos}' class")
+    print(f"=> Test Negative Dataset Predicted to '{q1_test_pos}' class\n")
      
