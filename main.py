@@ -162,7 +162,6 @@ def laplace_smoothing(prior_pos, prior_neg, condition_table, vocab, test_data, a
 # make graph for Question2
 def draw_graph(alpha_list, accuracy_list):
     log_alpha_list = np.log(alpha_list) 
-    print(accuracy_list)
     plt.figure(figsize=(8, 6))
     plt.plot(log_alpha_list, accuracy_list, marker='o', linestyle='-', label='Log Scale Plot')
     plt.xlabel('X values (log scale)')
@@ -170,54 +169,123 @@ def draw_graph(alpha_list, accuracy_list):
     plt.title('Log-Log Plot')
     plt.legend()
     plt.grid(True, which="both", linestyle="--", linewidth=0.5)
-    plt.savefig('graph_log.png')
+    plt.savefig('accuracy_graph.png')
 
+# select alpha value
+def select_alpha(alpha_list, accuracy_list):
+    # find max_index in accuracy_list
+    max_index = np.argmax(accuracy_list)
 
-                                                                                                                            
-# main function
-if __name__ == '__main__':
-    ### preprocessign data
-    percentage_positive_instances_train = 0.02
-    percentage_negative_instances_train = 0.02
-    percentage_positive_instances_test = 0.02
-    percentage_negative_instances_test = 0.02
+    # find alpha value located in max_index
+    best_alpha = alpha_list[max_index]
+
+    return best_alpha
+
+# proprocessing data
+def preprocessing_data(train_percen_pos, train_percen_neg, test_percen_pos, test_percen_neg):
+    percentage_positive_instances_train = train_percen_pos
+    percentage_negative_instances_train = train_percen_neg
+    percentage_positive_instances_test = test_percen_pos
+    percentage_negative_instances_test = test_percen_neg
     (pos_train, neg_train, vocab) = load_training_set(percentage_positive_instances_train, percentage_negative_instances_train)
     (pos_test, neg_test) = load_test_set(percentage_positive_instances_test, percentage_negative_instances_test)
     print("\nTrain and Test dataset are completed to preprocessing data\n")
-
-
+    return pos_train, neg_train, vocab, pos_test, neg_test
+                                                                                                            
+# main function
+if __name__ == '__main__':
     ### Question 1 : Standard Multinominal Naive Bayes
     print("[Question 1] Standard Multinomial Naive Bayes with both 20 % Train and Test Dataset\n")
+    ### preprocessign data
+    pos_train, neg_train, vocab, pos_test, neg_test=preprocessing_data(0.2, 0.2, 0.2, 0.2)
     # prior probability
     prior_pos_train,prior_neg_train=prior_prob(len(pos_train), len(neg_train)) 
     # condition probability
-    q1_condition_table=condition_prob(pos_train, neg_train)
+    condition_table=condition_prob(pos_train, neg_train)
     # posterior probability
-    q1_test_pos=multinomial_standard(prior_pos_train, prior_neg_train, q1_condition_table, list(vocab), pos_test)
-    q1_test_neg=multinomial_standard(prior_pos_train, prior_neg_train, q1_condition_table, list(vocab), neg_test) 
+    q1_test_pos=multinomial_standard(prior_pos_train, prior_neg_train, condition_table, list(vocab), pos_test)
+    q1_test_neg=multinomial_standard(prior_pos_train, prior_neg_train, condition_table, list(vocab), neg_test) 
     # message
     print(f"=> Test Positive Dataset Predicted to '{q1_test_pos}' class")
     print(f"=> Test Negative Dataset Predicted to '{q1_test_pos}' class\n")
     
+
     ### Question 2 : Laplace Smoothing alpha = 0.0001 ~ 1000
     print("\n[Question 2] Apply Laplace Smoothing with both 20 % Train and Test Dataset\n")
-    # condition probability
-    q2_condition_table=condition_prob(pos_train, neg_train)
     # posterior probability
     alpha_list=[0.001, 0.01, 1, 10, 100, 1000]
     accuracy_list=list()
     for i in range(len(alpha_list)):
         accuracy=0
-        q2_test_pos=laplace_smoothing(prior_pos_train, prior_neg_train, q2_condition_table, list(vocab), pos_test, i) 
-        q2_test_neg=laplace_smoothing(prior_pos_train, prior_neg_train, q2_condition_table, list(vocab), neg_test, i) 
+        q2_test_pos=laplace_smoothing(prior_pos_train, prior_neg_train, condition_table, list(vocab), pos_test, i) 
+        q2_test_neg=laplace_smoothing(prior_pos_train, prior_neg_train, condition_table, list(vocab), neg_test, i) 
         if q2_test_pos=="Positive":
             accuracy=accuracy+0.5
         if q2_test_neg=="Negative":
             accuracy=accuracy+0.5
         accuracy_list.append(accuracy)
-        # message
-        print(f"=> Test Positive Dataset Predicted to '{q2_test_pos}' class")
-        print(f"=> Test Negative Dataset Predicted to '{q2_test_neg}' class")
-        print(f"==> Accuracy : {accuracy_list}")
+    # message
+    print(f"=> Test Positive Dataset Predicted to '{q2_test_pos}' class")
+    print(f"=> Test Negative Dataset Predicted to '{q2_test_neg}' class")
+    print(f"==> Accuracy : {accuracy_list}")
     # make graph
     draw_graph(alpha_list,accuracy_list)
+
+
+    ### Question 3 : use all training and test dataset with accuracy maximize alpha
+    print("\n[Question 3] Apply Laplace Smoothing with both 100 % Train and Test Dataset\n")
+    ### preprocessign data
+    pos_train, neg_train, vocab, pos_test, neg_test=preprocessing_data(1, 1, 1, 1)
+    # select alpha maximize accuracy
+    best_alpha=select_alpha(alpha_list,accuracy_list)
+    # prior probability
+    prior_pos_train,prior_neg_train=prior_prob(len(pos_train), len(neg_train)) 
+    # condition probability
+    condition_table=condition_prob(pos_train, neg_train)
+    # get alpha value that maximizes accuracy
+    best_alpha=select_alpha(alpha_list,accuracy_list)
+    # posterior probability
+    q3_test_pos=laplace_smoothing(prior_pos_train, prior_neg_train, condition_table, list(vocab), pos_test, best_alpha) 
+    q3_test_neg=laplace_smoothing(prior_pos_train, prior_neg_train, condition_table, list(vocab), neg_test, best_alpha) 
+    # message
+    print(f"=> Test Positive Dataset Predicted to '{q3_test_pos}' class")
+    print(f"=> Test Negative Dataset Predicted to '{q3_test_neg}' class")
+
+
+    ### Question 4 : training 30% < test 100% dataset
+    print("\n[Question 4] Apply Laplace Smoothing with 30% Train and 100% Test Dataset\n")
+    ### preprocessign data
+    pos_train, neg_train, vocab, pos_test, neg_test=preprocessing_data(0.3, 0.3, 1, 1)
+    # prior probability
+    prior_pos_train,prior_neg_train=prior_prob(len(pos_train), len(neg_train)) 
+    # condition probability
+    condition_table=condition_prob(pos_train, neg_train)
+    # get alpha value that maximizes accuracy
+    best_alpha=select_alpha(alpha_list,accuracy_list)
+    # posterior probability
+    q4_test_pos=laplace_smoothing(prior_pos_train, prior_neg_train, condition_table, list(vocab), pos_test, best_alpha) 
+    q4_test_neg=laplace_smoothing(prior_pos_train, prior_neg_train, condition_table, list(vocab), neg_test, best_alpha) 
+    # message
+    print(f"=> Test Positive Dataset Predicted to '{q4_test_pos}' class")
+    print(f"=> Test Negative Dataset Predicted to '{q4_test_neg}' class")
+
+
+    ### Question 6 : unbalanced dataset => train(10%, 50%) / test 100%
+    print("\n[Question 46 Apply Laplace Smoothing with Unbalanced 10%,50% Train and 100% Test Dataset\n")
+    ### preprocessign data
+    pos_train, neg_train, vocab, pos_test, neg_test=preprocessing_data(0.1, 0.5, 1, 1)
+    # prior probability
+    prior_pos_train,prior_neg_train=prior_prob(len(pos_train), len(neg_train)) 
+    # condition probability
+    condition_table=condition_prob(pos_train, neg_train)
+    # get alpha value that maximizes accuracy
+    best_alpha=select_alpha(alpha_list,accuracy_list)
+    # posterior probability
+    q6_test_pos=laplace_smoothing(prior_pos_train, prior_neg_train, condition_table, list(vocab), pos_test, best_alpha) 
+    q6_test_neg=laplace_smoothing(prior_pos_train, prior_neg_train, condition_table, list(vocab), neg_test, best_alpha) 
+    # message
+    print(f"=> Test Positive Dataset Predicted to '{q6_test_pos}' class")
+    print(f"=> Test Negative Dataset Predicted to '{q6_test_neg}' class")
+
+
+    
