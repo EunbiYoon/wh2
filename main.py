@@ -25,17 +25,23 @@ def find_unique_words(nested_list):
 
 # find matching index between condition_table index and test dataset
 def find_matching_indices(vocab, test_unique):
-    pos_test_index = []
+    test_index = []
     
     for word in test_unique:
         if word in vocab:
-            pos_test_index.append(vocab.index(word))  # 해당 단어의 인덱스를 저장
-    
-    return pos_test_index
+            test_index.append(vocab.index(word))  # 해당 단어의 인덱스를 저장
+
+    return test_index
+
+def stand_portion(condition_table, sum_row):
+     # get the portion 
+    condition_table["pos_portion"] = condition_table["pos_frequency"] / sum_row.iloc[0]
+    condition_table["neg_portion"] = condition_table["neg_frequency"] / sum_row.iloc[1]
+    return condition_table
 
 
 # Conditioinal Probability :: pr(wk|yi) = n(wk, yi)/ sigma (n(ws, yi)) -> s = 1 ~ |V|
-def condition_prob(vocab, pos_train, neg_train, test_data):
+def condition_prob(pos_train, neg_train):
     ###### train ######
     # make condition_table
     condition_table=pd.DataFrame(index=range(len(vocab)), columns=["pos_frequency","neg_frequency"])
@@ -64,23 +70,7 @@ def condition_prob(vocab, pos_train, neg_train, test_data):
     # add sum end of table
     sum_row=condition_table.sum()
     condition_table.loc['Sum']=sum_row
-
-    # get the portion 
-    condition_table["pos_portion"] = condition_table["pos_frequency"] / sum_row.iloc[0]
-    condition_table["neg_portion"] = condition_table["neg_frequency"] / sum_row.iloc[1]
-
-
-    ###### test ######
-    # find unique word from test set
-    test_unique=find_unique_words(test_data)
-
-    # get the index matching with condition_table index
-    test_index=find_matching_indices(vocab, test_unique)
-
-    # get the portion from condition_table
-    test_condition_table=condition_table.iloc[test_index]
-
-    return test_condition_table
+    return condition_table
 
 
 # compare final two class's posterior value 
@@ -100,14 +90,30 @@ def compare_posterior(posterior_pos,posterior_neg):
             print("-> Error :: Positive and Negative Have Same Posterior Probability")
             return None
 
+
 # Standard Multinomial Naive Bayes
-def multinomial_standard(prior_pos, prior_neg, test_condition_table):
+def multinomial_standard(prior_pos, prior_neg, condition_table, vocab, test_data):
+    # get the portion 
+    condition_table["pos_portion"] = condition_table["pos_frequency"] / condition_table.at["Sum","pos_frequency"]
+    condition_table["neg_portion"] = condition_table["neg_frequency"] / condition_table.at["Sum","neg_frequency"]
+    
+    ##### sort with test dataset 
+    # find unique word from test set
+    test_unique=find_unique_words(test_data)
+    # get the index matching with condition_table index
+    test_index=find_matching_indices(vocab, test_unique)
+    # get the portion from condition_table
+    print(condition_table)
+    condition_table=condition_table.iloc[test_index]
+    print(condition_table)
+    #################################################
+
     # multiply pos_portion and neg_portion
-    multiply_row=test_condition_table.prod()
-    test_condition_table.loc['Multiply']=multiply_row
+    multiply_row=condition_table.prod()
+    condition_table.loc['Multiply']=multiply_row
     condition_pos=multiply_row["pos_portion"]
     condition_neg=multiply_row["neg_portion"]
-    print(test_condition_table)
+    print(condition_table)
 
     # multiply prior probability to final value of posterior probability
     posterior_pos = prior_pos * condition_pos
@@ -119,14 +125,30 @@ def multinomial_standard(prior_pos, prior_neg, test_condition_table):
 
 
 # Laplace Smoothing log(prior probability) + sum (log(conditional))
-def laplace_smoothing(prior_pos, prior_neg, test_condition_table):
-    # log(0)=infinite, so replace with very small number log(1e−10)
-    test_condition_table['pos_portion'] = test_condition_table['pos_portion'].apply(lambda x: 1e-10 if x == 0 else x)
-    test_condition_table['neg_portion'] = test_condition_table['neg_portion'].apply(lambda x: 1e-10 if x == 0 else x)
+def laplace_smoothing(prior_pos, prior_neg, condition_table, vocab, test_data, alpha):
+    # if the probability is 0, numerator+alpha & denominator+alpha*(len(vocab))
+    condition_table['pos_frequency_alpha'] = condition_table['pos_frequency'].apply(lambda x: alpha if x == 0 else x)
+    condition_table['neg_frequency_alpha'] = condition_table['neg_frequency'].apply(lambda x: alpha if x == 0 else x)
+    condition_table.at['Sum','pos_frequency_alpha'] = condition_table.at['Sum','pos_frequency']+alpha*(len(vocab))
+    condition_table.at['Sum','neg_frequency_alpha'] = condition_table.at['Sum','neg_frequency']+alpha*(len(vocab))
+
+    # get the portion 
+    condition_table["pos_portion_log"] = condition_table["pos_frequency_alpha"] / condition_table.at["Sum","pos_frequency_alpha"]
+    condition_table["neg_portion_log"] = condition_table["neg_frequency_alpha"] / condition_table.at["Sum","neg_frequency_alpha"]
+
+    ##### sort with test dataset 
+    # find unique word from test set
+    test_unique=find_unique_words(test_data)
+    # get the index matching with condition_table index
+    test_index=find_matching_indices(vocab, test_unique)
+    # get the portion from condition_table
+    condition_table=condition_table.iloc[test_index]
+    #################################################
 
     # get log summation of both portion
-    condition_log_pos = np.sum(test_condition_table['pos_portion'].apply(np.log))
-    condition_log_neg = np.sum(test_condition_table['neg_portion'].apply(np.log))
+    condition_log_pos = np.sum(condition_table['pos_portion_log'].apply(np.log))
+    condition_log_neg = np.sum(condition_table['neg_portion_log'].apply(np.log))
+    print(condition_table)
 
     # add with prior probability for final value of posterior probability
     posterior_pos=np.log(prior_pos)+condition_log_pos
@@ -152,24 +174,24 @@ if __name__ == '__main__':
     ### Question 1 : Standard Multinominal Naive Bayes
     print("[Question 1] Standard Multinomial Naive Bayes with both 20 % Train and Test Dataset\n")
     # prior probability
-    prior_pos_train,prior_neg_train=prior_prob(len(pos_train), len(neg_train)) # prior probability
+    prior_pos_train,prior_neg_train=prior_prob(len(pos_train), len(neg_train)) 
     # condition probability
-    condition_pos_test=condition_prob(list(vocab), pos_train, neg_train, pos_test) # conditional probability 
-    condition_neg_test=condition_prob(list(vocab), pos_train, neg_train, neg_test) # conditional probability 
+    q1_condition_table=condition_prob(pos_train, neg_train)
     # posterior probability
-    q1_test_pos=multinomial_standard(prior_pos_train, prior_neg_train, condition_pos_test) # posterior probability
-    q1_test_neg=multinomial_standard(prior_pos_train, prior_neg_train, condition_neg_test) # posterior probability
+    q1_test_pos=multinomial_standard(prior_pos_train, prior_neg_train, q1_condition_table, list(vocab), pos_test) # posterior probability
+    q1_test_neg=multinomial_standard(prior_pos_train, prior_neg_train, q1_condition_table, list(vocab), neg_test) # posterior probability
     # message
     print(f"=> Test Positive Dataset Predicted to '{q1_test_pos}' class\n")
     print(f"=> Test Negative Dataset Predicted to '{q1_test_pos}' class\n")
     
-
     ### Question 2 : Laplace Smoothing alpha = 0.0001 ~ 1000
-    print("[Question 2] Apply Laplace Smoothing with both 20 % Train and Test Dataset\n")
+    print("\n[Question 2] Apply Laplace Smoothing with both 20 % Train and Test Dataset\n")
+    # condition probability
+    q2_condition_table=condition_prob(pos_train, neg_train)
     # posterior probability
-    q2_test_pos=laplace_smoothing(prior_pos_train, prior_neg_train, condition_pos_test) # posterior probability
-    q2_test_neg=laplace_smoothing(prior_pos_train, prior_neg_train, condition_neg_test) # posterior probability
+    q2_test_pos=laplace_smoothing(prior_pos_train, prior_neg_train, q2_condition_table, list(vocab), pos_test, 1) # posterior probability
+    q2_test_neg=laplace_smoothing(prior_pos_train, prior_neg_train, q2_condition_table, list(vocab), neg_test, 1) # posterior probability
     # message
     print(f"=> Test Positive Dataset Predicted to '{q2_test_pos}' class\n")
-    print(f"=> Test Negative Dataset Predicted to '{q2_test_pos}' class\n")
+    print(f"=> Test Negative Dataset Predicted to '{q2_test_neg}' class\n")
     
