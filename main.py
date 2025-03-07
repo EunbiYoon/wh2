@@ -3,6 +3,7 @@ from itertools import chain
 import pandas as pd
 import openpyxl
 from collections import Counter
+import numpy as np
 
 
 # Prioir Probability :: pr(yi) = N(yi)/N
@@ -82,6 +83,22 @@ def condition_prob(vocab, pos_train, neg_train, test_data):
     return test_condition_table
 
 
+# compare final two class's posterior value 
+def compare_posterior(posterior_pos,posterior_neg):
+    # compare bewtween two class
+    if posterior_pos>posterior_neg:
+        posterior_result="Positive"
+        return posterior_result
+    elif posterior_pos<posterior_neg:
+        posterior_result="Negative"
+        return posterior_result
+    elif posterior_pos==posterior_neg:
+        if posterior_pos==0:
+            print("-> Error :: Multiply 0 made 0")
+            return None
+        else:
+            print("-> Error :: Positive and Negative Have Same Posterior Probability")
+            return None
 
 # Standard Multinomial Naive Bayes
 def multinomial_standard(prior_pos, prior_neg, test_condition_table):
@@ -92,25 +109,32 @@ def multinomial_standard(prior_pos, prior_neg, test_condition_table):
     condition_neg=multiply_row["neg_portion"]
     print(test_condition_table)
 
+    # multiply prior probability to final value of posterior probability
     posterior_pos = prior_pos * condition_pos
     posterior_neg = prior_neg * condition_neg
-    if posterior_pos>posterior_neg:
-        posterior_result="Positive"
-        return posterior_result
-    elif posterior_pos<posterior_neg:
-        posterior_result="Negative"
-        return posterior_result
-    elif posterior_pos==posterior_neg:
-        if posterior_pos==0:
-            print("-> Error :: Multiply 0 made 0")
-        else:
-            print("-> Error :: Positive and Negative Have Same Posterior Probability")
+
+    # compare posterior probability between class
+    predicted_class=compare_posterior(posterior_pos, posterior_neg)
+    return predicted_class
 
 
 # Laplace Smoothing log(prior probability) + sum (log(conditional))
-def laplace_smoothing():
-    posterior_prob
-    return 3
+def laplace_smoothing(prior_pos, prior_neg, test_condition_table):
+    # log(0)=infinite, so replace with very small number log(1e−10)
+    test_condition_table['pos_portion'] = test_condition_table['pos_portion'].apply(lambda x: 1e-10 if x == 0 else x)
+    test_condition_table['neg_portion'] = test_condition_table['neg_portion'].apply(lambda x: 1e-10 if x == 0 else x)
+
+    # get log summation of both portion
+    condition_log_pos = np.sum(test_condition_table['pos_portion'].apply(np.log))
+    condition_log_neg = np.sum(test_condition_table['neg_portion'].apply(np.log))
+
+    # add with prior probability for final value of posterior probability
+    posterior_pos=np.log(prior_pos)+condition_log_pos
+    posterior_neg=np.log(prior_neg)+condition_log_neg
+    
+    # compare posterior probability between class
+    predicted_class=compare_posterior(posterior_pos, posterior_neg)
+    return predicted_class
 
                                                                                                                             
 # main function
@@ -127,15 +151,25 @@ if __name__ == '__main__':
 
     ### Question 1 : Standard Multinominal Naive Bayes
     print("[Question 1] Standard Multinomial Naive Bayes with both 20 % Train and Test Dataset\n")
+    # prior probability
     prior_pos_train,prior_neg_train=prior_prob(len(pos_train), len(neg_train)) # prior probability
-    # test positive dataset
-    test_condition_table=condition_prob(list(vocab), pos_train, neg_train, pos_test) # conditional probability 
-    q1_test_pos=multinomial_standard(prior_pos_train, prior_neg_train, test_condition_table) # posterior probability
+    # condition probability
+    condition_pos_test=condition_prob(list(vocab), pos_train, neg_train, pos_test) # conditional probability 
+    condition_neg_test=condition_prob(list(vocab), pos_train, neg_train, neg_test) # conditional probability 
+    # posterior probability
+    q1_test_pos=multinomial_standard(prior_pos_train, prior_neg_train, condition_pos_test) # posterior probability
+    q1_test_neg=multinomial_standard(prior_pos_train, prior_neg_train, condition_neg_test) # posterior probability
+    # message
     print(f"=> Test Positive Dataset Predicted to '{q1_test_pos}' class\n")
-    # test negative dataset
-    test_condition_table=condition_prob(list(vocab), pos_train, neg_train, neg_test) # conditional probability 
-    q1_test_neg=multinomial_standard(prior_pos_train, prior_neg_train, test_condition_table) # posterior probability
     print(f"=> Test Negative Dataset Predicted to '{q1_test_pos}' class\n")
     
 
     ### Question 2 : Laplace Smoothing alpha = 0.0001 ~ 1000
+    print("[Question 2] Apply Laplace Smoothing with both 20 % Train and Test Dataset\n")
+    # posterior probability
+    q2_test_pos=laplace_smoothing(prior_pos_train, prior_neg_train, condition_pos_test) # posterior probability
+    q2_test_neg=laplace_smoothing(prior_pos_train, prior_neg_train, condition_neg_test) # posterior probability
+    # message
+    print(f"=> Test Positive Dataset Predicted to '{q2_test_pos}' class\n")
+    print(f"=> Test Negative Dataset Predicted to '{q2_test_pos}' class\n")
+    
