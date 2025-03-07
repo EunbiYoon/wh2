@@ -45,6 +45,8 @@ def load_training_set(percentage_positives, percentage_negatives):
         negative_instances.append(contents)
         vocab = vocab.union(set(contents))
 
+    # vocab : not duplicate (set)
+    # pos_train, neg_train : duplicate (append) 
     return positive_instances, negative_instances, vocab
 
 
@@ -59,8 +61,8 @@ def load_test_set(percentage_positives, percentage_negatives):
             continue
         contents = preprocess_text(contents)
         positive_instances.append(contents)
-    df = pd.read_csv('test-negative.csv')
     
+    df = pd.read_csv('test-negative.csv')
     for _, contents in df.iterrows():
         contents = contents['reviewText']
         if random.random() > percentage_negatives:

@@ -1,84 +1,129 @@
 from utils import load_training_set, load_test_set
 from itertools import chain
 import pandas as pd
+import openpyxl
+from collections import Counter
 
-# unique vocabulary vector
-def vocabulary_vector(data_list):
-    return 3
 
 # Prioir Probability :: pr(yi) = N(yi)/N
-def prior_probability(pos_data_len, neg_data_len, train_info):
-    if train_info=="pos":
-        pr_yi = pos_data_len / ( pos_data_len + neg_data_len )
-    elif train_info=="neg":
-        pr_yi = neg_data_len / ( pos_data_len + neg_data_len )
-    else:
-        print("Error :: check your train_info")
-    return pr_yi
+def prior_prob(pos_data_len, neg_data_len):
+    prior_pos = pos_data_len / ( pos_data_len + neg_data_len )
+    prior_neg = neg_data_len / ( pos_data_len + neg_data_len )
+    return prior_pos, prior_neg
         
-# bag-of-words vector m
-def bag_of_words(V_vector, data_list):
-    M_Vector=pd.DataFrame(columns=V_vector,index=range(len(data_list)))
-    for i in range(len(data_list)):
-       # DataFrame에서 행을 가져오려면 iloc 사용
-        result = [[sublist.count(target) for target in sublist] for sublist in M_Vector.iloc[i]]
-        print(result)
+# find unique word in test dataset
+def find_unique_words(nested_list):
+    word_counts = {}
+    # 모든 단어의 빈도수 계산
+    for sublist in nested_list:
+        for word in sublist:
+            word_counts[word] = word_counts.get(word, 0) + 1
+    # 빈도수가 1인 단어만 필터링
+    unique_words = [word for word, count in word_counts.items() if count == 1]
+    return unique_words
+
+# find matching index between condition_table index and test dataset
+def find_matching_indices(vocab, test_unique):
+    pos_test_index = []
+    
+    for word in test_unique:
+        if word in vocab:
+            pos_test_index.append(vocab.index(word))  # 해당 단어의 인덱스를 저장
+    
+    return pos_test_index
 
 
-# Posterior Probability :: pr(yi|Doc) = n(wk, yi)/sigma (n(ws,yi))
-def posterior_probability():
-    return 4
-                                                                                                                                                  
+# Conditioinal Probability :: pr(wk|yi) = n(wk, yi)/ sigma (n(ws, yi)) -> s = 1 ~ |V|
+def condition_prob(vocab, pos_train, neg_train, test_data):
+    ###### train ######
+    # make condition_table
+    condition_table=pd.DataFrame(index=range(len(vocab)), columns=["pos_frequency","neg_frequency"])
 
-# make confusion matrix
-def confusion_matrix():
-    return 5
+    # assign all the vocab in pos and neg with value 0
+    pos_word_counts = {word: 0 for word in vocab}
+    neg_word_counts = {word: 0 for word in vocab}
+
+    # calcualte pos_train word frequency
+    for review in pos_train:
+        for word in review:
+            if word in pos_word_counts:
+                pos_word_counts[word] += 1
+
+    # calcualte neg_train word frequency
+    for review in neg_train:
+        for word in review:
+            if word in neg_word_counts:
+                neg_word_counts[word] += 1
+
+    # fill out the value in condition table
+    for i, word in enumerate(vocab):
+        condition_table.at[i, "pos_frequency"] = pos_word_counts[word]
+        condition_table.at[i, "neg_frequency"] = neg_word_counts[word]
+    
+    # add sum end of table
+    sum_row=condition_table.sum()
+    condition_table.loc['Sum']=sum_row
+
+    # get the portion 
+    condition_table["pos_portion"] = condition_table["pos_frequency"] / sum_row.iloc[0]
+    condition_table["neg_portion"] = condition_table["neg_frequency"] / sum_row.iloc[1]
+
+
+    ###### test ######
+    # find unique word from test set
+    test_unique=find_unique_words(test_data)
+
+    # get the index matching with condition_table index
+    test_index=find_matching_indices(vocab, test_unique)
+
+    # get the portion from condition_table
+    test_condition_portion=condition_table.iloc[test_index]
+
+    # multiply pos_portion and neg_portion
+    test_condition_multiply = test_condition_portion.prod()
+
+    return test_condition_multiply["pos_portion"], test_condition_multiply["neg_portion"]
 
 
 
+# Standard Multinomial Naive Bayes
+def multinomial_standard(prior_pos, prior_neg, condition_pos, condition_neg):
+    posterior_pos = prior_pos * condition_pos
+    posterior_neg = prior_neg * condition_neg
+    if posterior_pos>posterior_neg:
+        posterior_result="Positive"
+        return posterior_result
+    elif posterior_pos<posterior_neg:
+        posterior_result="Negative"
+        return posterior_result
+    elif posterior_pos==posterior_neg:
+        if posterior_pos==0:
+            print("Error :: Multiply 0 made 0")
+        else:
+            print("Error :: Positive and Negative Have Same Posterior Probability ")
+
+                                                                                                                            
 # main function
 if __name__ == '__main__':
     ### preprocessign data
-    percentage_positive_instances_train = 0.2
-    percentage_negative_instances_train = 0.2
-    percentage_positive_instances_test = 0.2
-    percentage_negative_instances_test = 0.2
+    percentage_positive_instances_train = 0.02
+    percentage_negative_instances_train = 0.02
+    percentage_positive_instances_test = 0.02
+    percentage_negative_instances_test = 0.02
     (pos_train, neg_train, vocab) = load_training_set(percentage_positive_instances_train, percentage_negative_instances_train)
     (pos_test, neg_test) = load_test_set(percentage_positive_instances_test, percentage_negative_instances_test)
-
-    ### calculate prior probability
-    pr_yi_pos=prior_probability(len(pos_train), len(neg_train), "pos")
-    pr_yi_neg=prior_probability(len(pos_train), len(neg_train), "neg")
-    print(pr_yi_pos)
-    print(pr_yi_neg)
+    print("Train and Test dataset are completed to preprocessing data")
 
 
-    ### check data output
-    # print("Number of positive training instances:", len(pos_train))
-    # print("Number of positive training instances:", len(neg_train))
-    # print("Number of positive test instances:", len(pos_test))
-    # print("Number of negative test instances:", len(neg_test))
-    # # 데이터 출력
-    # print(pos_train)
-    # print(neg_train)
-    # print(pos_test)
-    # print(neg_test)
-    # 데이터 저장
-    with open('pos_train.txt','w',encoding='utf-8') as file:
-        file.writelines(f"{item}\n" for item in pos_train)
-    
-    ### combine pos and neg data 
-    combined_train=list(chain(pos_train+neg_train))
-    # 데이터 저장
-    with open('combined.txt','w',encoding='utf-8') as file:
-        file.writelines(f"{item}\n" for item in combined_train)
-
-    ### calculate Vocabulary Vector : unique words from training
-    V_vector = list(set(chain.from_iterable(combined_train)))
-    # 데이터 저장
-    with open('V_vector.txt','w',encoding='utf-8') as file:
-        file.writelines(f"{item}\n" for item in V_vector)
-
-    ### calculate posterior probability
-    aa=bag_of_words(V_vector,combined_train)
-    print(aa)
+    ### Question 1 : standard Multinominal Naive Bayes
+    print("===== Question 1 : Standard Multinomial Naive Bayes with both 20 % Train and Test Dataset ====")
+    prior_pos_train,prior_neg_train=prior_prob(len(pos_train), len(neg_train)) # prior probability
+    # test positive dataset
+    condition_pos_test, condition_neg_test=condition_prob(list(vocab), pos_train, neg_train, pos_test) # conditional probability 
+    q1_test_pos=multinomial_standard(prior_pos_train, prior_neg_train, condition_pos_test, condition_neg_test) # posterior probability
+    print(f"=====> Test Positive Dataset Predicted to '{q1_test_pos}' class")
+    # test negative dataset
+    condition_pos_test, condition_neg_test=condition_prob(list(vocab), pos_train, neg_train, pos_test) # conditional probability 
+    q1_test_neg=multinomial_standard(prior_pos_train, prior_neg_train, condition_pos_test, condition_neg_test) # posterior probability
+    print(f"=====> Test Negative Dataset Predicted to '{q1_test_pos}' class")
+     
