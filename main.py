@@ -4,6 +4,7 @@ import pandas as pd
 import openpyxl
 from collections import Counter
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 # Prioir Probability :: pr(yi) = N(yi)/N
@@ -158,6 +159,20 @@ def laplace_smoothing(prior_pos, prior_neg, condition_table, vocab, test_data, a
     predicted_class=compare_posterior(posterior_pos, posterior_neg)
     return predicted_class
 
+# make graph for Question2
+def draw_graph(alpha_list, accuracy_list):
+    log_alpha_list = np.log(alpha_list) 
+    print(accuracy_list)
+    plt.figure(figsize=(8, 6))
+    plt.plot(log_alpha_list, accuracy_list, marker='o', linestyle='-', label='Log Scale Plot')
+    plt.xlabel('X values (log scale)')
+    plt.ylabel('Y values')
+    plt.title('Log-Log Plot')
+    plt.legend()
+    plt.grid(True, which="both", linestyle="--", linewidth=0.5)
+    plt.savefig('graph_log.png')
+
+
                                                                                                                             
 # main function
 if __name__ == '__main__':
@@ -178,8 +193,8 @@ if __name__ == '__main__':
     # condition probability
     q1_condition_table=condition_prob(pos_train, neg_train)
     # posterior probability
-    q1_test_pos=multinomial_standard(prior_pos_train, prior_neg_train, q1_condition_table, list(vocab), pos_test) # posterior probability
-    q1_test_neg=multinomial_standard(prior_pos_train, prior_neg_train, q1_condition_table, list(vocab), neg_test) # posterior probability
+    q1_test_pos=multinomial_standard(prior_pos_train, prior_neg_train, q1_condition_table, list(vocab), pos_test)
+    q1_test_neg=multinomial_standard(prior_pos_train, prior_neg_train, q1_condition_table, list(vocab), neg_test) 
     # message
     print(f"=> Test Positive Dataset Predicted to '{q1_test_pos}' class")
     print(f"=> Test Negative Dataset Predicted to '{q1_test_pos}' class\n")
@@ -189,9 +204,20 @@ if __name__ == '__main__':
     # condition probability
     q2_condition_table=condition_prob(pos_train, neg_train)
     # posterior probability
-    q2_test_pos=laplace_smoothing(prior_pos_train, prior_neg_train, q2_condition_table, list(vocab), pos_test, 1) # posterior probability
-    q2_test_neg=laplace_smoothing(prior_pos_train, prior_neg_train, q2_condition_table, list(vocab), neg_test, 1) # posterior probability
-    # message
-    print(f"=> Test Positive Dataset Predicted to '{q2_test_pos}' class")
-    print(f"=> Test Negative Dataset Predicted to '{q2_test_neg}' class\n")
-    
+    alpha_list=[0.001, 0.01, 1, 10, 100, 1000]
+    accuracy_list=list()
+    for i in range(len(alpha_list)):
+        accuracy=0
+        q2_test_pos=laplace_smoothing(prior_pos_train, prior_neg_train, q2_condition_table, list(vocab), pos_test, i) 
+        q2_test_neg=laplace_smoothing(prior_pos_train, prior_neg_train, q2_condition_table, list(vocab), neg_test, i) 
+        if q2_test_pos=="Positive":
+            accuracy=accuracy+0.5
+        if q2_test_neg=="Negative":
+            accuracy=accuracy+0.5
+        accuracy_list.append(accuracy)
+        # message
+        print(f"=> Test Positive Dataset Predicted to '{q2_test_pos}' class")
+        print(f"=> Test Negative Dataset Predicted to '{q2_test_neg}' class")
+        print(f"==> Accuracy : {accuracy_list}")
+    # make graph
+    draw_graph(alpha_list,accuracy_list)
