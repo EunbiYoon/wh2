@@ -6,3 +6,6 @@
 3. install all requirements
     pip install -r requirements.txt
 4. install nltk packages
+    python 
+    import nltk
+    nltk.download('stopwords')
