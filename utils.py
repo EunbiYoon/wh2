@@ -1,12 +1,16 @@
 import re
 import random
 import pandas as pd
-from nltk.corpus import stopwords
 import nltk
+
+## add this part for mac -> remove for window
+nltk.data.path.append('/Users/ptk-a240386-mb/nltk_data')
+from nltk.corpus import stopwords
 
 REPLACE_NO_SPACE = re.compile("[._;:!*`¦\'?,\"()\[\]]")
 REPLACE_WITH_SPACE = re.compile("(<br\s*/><br\s*/>)|(\-)|(\/)")
-nltk.download('stopwords')
+## remove this part for mac -> add for window
+#nltk.download('stopwords')
 
 
 def preprocess_text(text):
@@ -41,6 +45,8 @@ def load_training_set(percentage_positives, percentage_negatives):
         negative_instances.append(contents)
         vocab = vocab.union(set(contents))
 
+    # vocab : not duplicate (set)
+    # pos_train, neg_train : duplicate (append) 
     return positive_instances, negative_instances, vocab
 
 
@@ -55,8 +61,8 @@ def load_test_set(percentage_positives, percentage_negatives):
             continue
         contents = preprocess_text(contents)
         positive_instances.append(contents)
-    df = pd.read_csv('test-negative.csv')
     
+    df = pd.read_csv('test-negative.csv')
     for _, contents in df.iterrows():
         contents = contents['reviewText']
         if random.random() > percentage_negatives:
